@@ -619,10 +619,15 @@ class MainWindow(QMainWindow):
         return QSize(max(1, round(height * self.background_ratio)), height)
 
     def _apply_style(self) -> None:
-        background_url = BACKGROUND_PATH.as_posix()
+        background_rule = "background: #000000;"
+        if BACKGROUND_PATH.exists():
+            background_rule = (
+                f'border-image: url("{BACKGROUND_PATH.as_posix()}") '
+                "0 0 0 0 stretch stretch;"
+            )
         style = """
             QWidget#root {
-                border-image: url("__BACKGROUND_URL__") 0 0 0 0 stretch stretch;
+                __BACKGROUND_RULE__
                 color: rgba(255, 255, 255, 235);
                 font-family: "__FONT_FAMILY__", "Microsoft YaHei UI", "Segoe UI";
                 font-size: 14px;
@@ -769,7 +774,7 @@ class MainWindow(QMainWindow):
             }
             """
         self.setStyleSheet(
-            style.replace("__BACKGROUND_URL__", background_url).replace(
+            style.replace("__BACKGROUND_RULE__", background_rule).replace(
                 "__FONT_FAMILY__",
                 self.font_family,
             )

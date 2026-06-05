@@ -6,6 +6,7 @@ from typing import AsyncIterator
 from kemono_downloader.api.base import PlatformApi
 from kemono_downloader.config import INCLUDE_OTHER_ATTACHMENTS
 
+from .content import build_content_text
 from .models import DateNamingMode, DownloadTask, FileItem, PostItem
 from .naming import post_folder_name, rename_images, sanitize_filename
 
@@ -53,11 +54,21 @@ class DownloadService:
         files = await self.api.get_post_files(post)
         if not self.include_other_attachments:
             files = [item for item in files if item.kind == "image"]
-        files = rename_images(files)
+
+        content_html = await self.api.get_post_content(post)
+        post.content_html = content_html
+
+        content_item = FileItem(url=post.url, name="content.txt", kind="text", content="")
+        items = rename_images([content_item, *files])
+        files = [item for item in items if item.kind != "text"]
+        for item in items:
+            if item.kind == "text":
+                item.content = build_content_text(post, files, external_links=[])
+                break
 
         post_dir = self._resolve_post_dir(output_dir, post, naming_mode)
         tasks: list[DownloadTask] = []
-        for item in files:
+        for item in items:
             save_path = post_dir / sanitize_filename(item.name)
             tasks.append(
                 DownloadTask(
