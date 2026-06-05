@@ -1,0 +1,2 @@
+"""Refactored Kemono downloader package."""
+
